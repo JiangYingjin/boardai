@@ -10,11 +10,6 @@ interface ErrorResponse {
     error: string
 }
 
-export const isAuthenticated = () => {
-    if (typeof window === 'undefined') return false
-    return !!localStorage.getItem('token')
-}
-
 export const authenticate = async (username: string, password: string): Promise<AuthResponse> => {
     try {
         const response = await fetch('/api/auth', {

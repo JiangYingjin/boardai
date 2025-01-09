@@ -121,10 +121,6 @@ export default function ClassPage() {
     setSelectedPhotoId(prev => (prev === photoId ? null : photoId))
   }
 
-  const handleDownload = (photoUrl: string) => {
-    // 下载图片逻辑
-  }
-
   const handleCopyExplanation = (explanation: string) => {
     navigator.clipboard.writeText(explanation)
   }
@@ -205,9 +201,6 @@ export default function ClassPage() {
             />
             {selectedPhotoId === photo.photo_id && (
               <div className="absolute top-2 right-2 flex space-x-4">
-                <button onClick={() => handleDownload(photo.photo_url)}>
-                  <ArrowDownTrayIcon className="w-8 h-8" />
-                </button>
                 <button onClick={() => handleCopyExplanation(photo.explanation || '')}>
                   <ClipboardDocumentIcon className="w-8 h-8" />
                 </button>

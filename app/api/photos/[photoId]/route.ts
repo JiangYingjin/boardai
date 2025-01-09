@@ -9,7 +9,7 @@ export async function DELETE(
     { params }: { params: { photoId: string } }
 ) {
     try {
-        const { photoId } = params
+        const { photoId } = await params
         const cookieStore = await cookies()
         const token = cookieStore.get('token')?.value
 
