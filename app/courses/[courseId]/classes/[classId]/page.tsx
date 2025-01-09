@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { Button, Accordion, AccordionItem } from "@nextui-org/react"
+import { Button, Accordion, AccordionItem, Spinner } from "@nextui-org/react"
 import { ChevronLeft, Plus, Settings } from "lucide-react"
 import { ArrowDownTrayIcon, ClipboardDocumentIcon, TrashIcon } from '@heroicons/react/24/outline'
 
@@ -144,7 +144,7 @@ export default function ClassPage() {
     }
   }
 
-  if (loading) return <div>加载中...</div>
+  if (loading) return null
   if (error) return <div>错误: {error}</div>
   if (!classInfo) return <div>未找到课堂信息</div>
 

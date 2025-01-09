@@ -23,6 +23,7 @@ import {
   ArrowsPointingOutIcon,
   EllipsisVerticalIcon,
   TrashIcon,
+  ArrowLeftIcon,
 } from "@heroicons/react/24/outline"
 
 interface Class {
@@ -88,7 +89,14 @@ export default function CoursePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar className="shadow-sm">
-        <NavbarContent>
+        <NavbarContent justify="start">
+          <Button
+            isIconOnly
+            variant="light"
+            onPress={() => router.push('/courses')}
+          >
+            <ArrowLeftIcon className="w-5 h-5" />
+          </Button>
           <NavbarBrand>
             <p className="font-bold text-xl">{course.course_name}</p>
           </NavbarBrand>
@@ -126,7 +134,11 @@ export default function CoursePage() {
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.2 }}
               >
-                <Card className="w-full">
+                <Card
+                  isPressable
+                  onPress={() => router.push(`/courses/${courseId}/classes/${classItem.class_id}`)}
+                  className="w-full"
+                >
                   <CardBody className="p-5">
                     <h2 className="text-xl font-semibold mb-2">{classItem.title}</h2>
                     <p className="text-sm text-gray-500 mb-3">
