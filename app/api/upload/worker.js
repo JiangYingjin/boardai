@@ -29,13 +29,22 @@ async function analyzeImage(photoId, filePath) {
         // 调用 OpenAI API 进行图像分析
         console.log('调用 OpenAI API 进行图像分析')
         const responseStream = await openai.chat.completions.create({
-            model: "doubao-vision-pro-32k-241028",
+            model: "gpt-4o-2024-11-20",
+            // model: "gemini-2.0-flash-exp",
+            // model: "doubao-vision-pro-32k-241028",
             max_tokens: 4000,
             messages: [
                 {
                     role: "user",
                     content: [
-                        { type: "text", text: "详细分析讲解这张大学课程板书照片内容，并阐述相关知识点" },
+                        {
+                            type: "text", text: `
+# 任务
+- 详细分析该大学课程板书内容，阐述相关知识点。
+
+# 要求
+- 行内公式和块级公式必须用$和$$来包裹！！！
+- 行内公式和块级公式禁止使用[]和()来包裹！！！` },
                         {
                             type: "image_url",
                             image_url: {
@@ -64,6 +73,18 @@ async function analyzeImage(photoId, filePath) {
                     'INSERT INTO analysis (photo_id, explanation) VALUES (?, ?) ON DUPLICATE KEY UPDATE explanation = ?',
                     [photoId, explanationToSave, explanationToSave]
                 );
+
+                const fs = require('fs');
+                const path = require('path');
+                const cwd = process.cwd();
+                const tmpDir = path.join(cwd, 'tmp');
+                if (!fs.existsSync(tmpDir)) {
+                    fs.mkdirSync(tmpDir, { recursive: true });
+                }
+                const filePath = path.join(tmpDir, `${photoId}.md`);
+                fs.writeFileSync(filePath, explanationToSave, 'utf8');
+                console.log(`文件保存成功: ${filePath}`);
+
                 console.log('数据库更新成功');
                 lastInsertTime = currentTime;
             }

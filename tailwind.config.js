@@ -9,5 +9,8 @@ module.exports = {
     theme: {
         extend: {},
     },
-    plugins: [nextui()],
+    plugins: [
+        require('@tailwindcss/typography'),
+        nextui()
+    ],
 } 

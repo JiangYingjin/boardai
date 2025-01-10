@@ -1,0 +1,207 @@
+.container {
+  padding: 0.5rem;
+  max-width: 800px;
+  margin: 0 auto;
+  background: #ffffff;
+}
+
+.mathContent {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #2c3e50;
+}
+
+/* 基础 KaTeX 样式优化 */
+.mathContent :global(.katex) {
+  font-size: 1.2em;
+  line-height: 1.4;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+/* 行内公式样式优化 */
+.mathContent :global(.katex-inline) {
+  padding: 0.18em 0;
+  vertical-align: -0.15em;
+}
+
+/* 块级公式容器优化 */
+.mathContent :global(.katex-display) {
+  margin: 1.2em 0;
+  padding: 0.9em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+/* 优化行间公式的显示 */
+.mathContent :global(.katex-display > .katex) {
+  display: inline-block;
+  text-align: center;
+  max-width: 100%;
+}
+
+/* 确保公式在移动设备上也能优雅展示 */
+@media (max-width: 768px) {
+  .mathContent :global(.katex-display) {
+    padding: 0.3em 0;
+    margin: 0.8em 0;
+  }
+}
+
+/* 导数符号位置精确控制 */
+.mathContent :global(.katex .mord.mathrm) {
+  margin-left: 0.02em;
+  position: relative;
+  top: 0;
+  left: 0;
+  font-size: 0.85em;
+  font-weight: 500;
+  display: inline-block;
+  vertical-align: baseline;
+  transform: none;
+}
+
+/* 优化数学运算符间距 */
+.mathContent :global(.katex .mop) {
+  margin: 0 0.18em;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.mathContent :global(.katex .mbin) {
+  margin: 0 0.3em;
+  font-weight: 500;
+}
+
+.mathContent :global(.katex .mrel) {
+  margin: 0 0.3em;
+  font-weight: 500;
+}
+
+/* 优化积分符号 */
+.mathContent :global(.katex .mop.int) {
+  margin: 0 0.1em;
+  vertical-align: 0;
+  font-size: 1.2em;
+  font-weight: 500;
+}
+
+/* 优化括号和定界符 */
+.mathContent :global(.katex .mopen, .katex .mclose) {
+  margin: 0 0.08em;
+  font-weight: 500;
+}
+
+/* 分数样式优化 */
+.mathContent :global(.katex .mfrac) {
+  margin: 0 0.25em;
+  vertical-align: -0.5em;
+}
+
+.mathContent :global(.katex .mfrac .mord) {
+  font-weight: 500;
+  margin: 0.05em 0;
+}
+
+/* 优化上标下标的位置 */
+.mathContent :global(.katex .msupsub) {
+  text-align: left;
+  margin-right: 0;
+  vertical-align: 0;
+  position: relative;
+}
+
+.mathContent :global(.katex .msupsub .msup) {
+  vertical-align: super;
+  font-size: 0.85em;
+  position: relative;
+  top: 0;
+}
+
+.mathContent :global(.katex .msupsub .msub) {
+  vertical-align: sub;
+  font-size: 0.85em;
+  position: relative;
+  bottom: 0;
+}
+
+/* 优化数字和变量的显示 */
+.mathContent :global(.katex .mathit) {
+  font-style: italic;
+  font-weight: 500;
+  margin: 0 0.04em;
+  letter-spacing: 0.02em;
+}
+
+.mathContent :global(.katex .mathbf) {
+  font-weight: bold;
+}
+
+/* 标题样式优化 */
+.mathContent h1 {
+  margin: 1em 0 0.5em;
+  color: #1a202c;
+  font-weight: 700;
+  font-size: 1.8em;
+  border-bottom: 2px solid #edf2f7;
+  padding-bottom: 0.2em;
+}
+
+.mathContent h2 {
+  margin: 1em 0 0.5em;
+  color: #1a202c;
+  font-weight: 600;
+  font-size: 1.5em;
+  border-bottom: 2px solid #edf2f7;
+  padding-bottom: 0.2em;
+}
+
+.mathContent h3 {
+  margin: 0.8em 0 0.4em;
+  color: #2d3748;
+  font-weight: 500;
+  font-size: 1.25em;
+}
+
+/* 段落间距优化 */
+.mathContent p {
+  margin: 0.5em 0;
+  line-height: 1.7;
+}
+
+/* 添加滚动条美化 */
+.mathContent :global(.katex-display::-webkit-scrollbar) {
+  height: 4px;
+}
+
+.mathContent :global(.katex-display::-webkit-scrollbar-track) {
+  background: rgba(237, 242, 247, 0.5);
+  border-radius: 2px;
+}
+
+.mathContent :global(.katex-display::-webkit-scrollbar-thumb) {
+  background: rgba(160, 174, 192, 0.5);
+  border-radius: 2px;
+  transition: all 0.2s ease;
+}
+
+.mathContent :global(.katex-display::-webkit-scrollbar-thumb:hover) {
+  background: rgba(160, 174, 192, 0.8);
+}
+
+/* 优化数学符号的显示 */
+.mathContent :global(.katex .mord) {
+  font-weight: 500;
+  margin: 0 0.02em;
+}
+
+/* 优化数字显示 */
+.mathContent :global(.katex .mathord) {
+  font-weight: 500;
+}

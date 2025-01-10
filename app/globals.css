@@ -2,9 +2,119 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 添加全局滚动条样式 */
+html,
+body {
+  &::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 2px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(59, 130, 246, 0.45);
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    background-clip: padding-box;
+    transition: all 0.3s ease;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(59, 130, 246, 0.65);
+  }
+
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(59, 130, 246, 0.45) transparent;
+}
+
+/* 深色模式 */
+.dark html,
+.dark body {
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(96, 165, 250, 0.35);
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(96, 165, 250, 0.55);
+  }
+
+  scrollbar-color: rgba(96, 165, 250, 0.35) transparent;
+}
+
+@layer utilities {
+  .custom-scrollbar {
+    /* Webkit 浏览器 */
+    &::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+      margin: 2px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: rgba(156, 163, 175, 0.25);
+      border-radius: 9999px;
+      border: 1px solid transparent;
+      background-clip: padding-box;
+      transition: all 0.2s ease;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background-color: rgba(156, 163, 175, 0.4);
+    }
+
+    /* Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.25) transparent;
+  }
+
+  /* 深色模式 */
+  .dark .custom-scrollbar {
+    &::-webkit-scrollbar-thumb {
+      background-color: rgba(156, 163, 175, 0.15);
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background-color: rgba(156, 163, 175, 0.3);
+    }
+
+    scrollbar-color: rgba(156, 163, 175, 0.15) transparent;
+  }
+
+  /* 代码块滚动条 */
+  .prose pre {
+    &::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+
+    &::-webkit-scrollbar-track {
+      margin: 1px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: rgba(156, 163, 175, 0.3);
+      border: none;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background-color: rgba(156, 163, 175, 0.5);
+    }
+  }
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --katex-font-path: "/fonts/katex";
 }
 
 @media (prefers-color-scheme: dark) {
@@ -18,4 +128,17 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+}
+
+/* 确保 KaTeX 字体正确加载 */
+@font-face {
+  font-family: "KaTeX_Main";
+  src: url("/fonts/katex/KaTeX_Main-Regular.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
 }

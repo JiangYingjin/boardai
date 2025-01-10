@@ -6,6 +6,9 @@ import { Button, Accordion, AccordionItem, Spinner } from "@nextui-org/react"
 import { ChevronLeft, Plus, Settings } from "lucide-react"
 import { ArrowDownTrayIcon, ClipboardDocumentIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { isAuthenticated } from '@/lib/auth'
+import Markdown from 'react-markdown'
+import rehypeExternalLinks from 'rehype-external-links'
+import MarkdownRenderer from '@/app/components/MarkdownRenderer'
 
 interface BoardPhoto {
   photo_id: number
@@ -211,9 +214,6 @@ export default function ClassPage() {
               </div>
             )}
             <div className="p-2">
-              {/* <div className="text-sm text-gray-600 mb-2">
-                拍摄时间: {new Date(photo.created_at).toLocaleString()}
-              </div> */}
               <Accordion>
                 <AccordionItem
                   key="1"
@@ -236,7 +236,34 @@ export default function ClassPage() {
                   }}
                 >
                   <div className="text-sm">
-                    {photo.explanation || '暂无分析'}
+                    {photo.explanation ? (
+                      <MarkdownRenderer
+                        content={photo.explanation}
+//                         content={`
+// # 工数
+                          
+// ## 变量代换法
+
+// 行内公式示例：$\\int f(x) \\, dx$，其中 $x = g(t)$
+
+// 块级公式：
+
+// $$
+// \\int f(x) \\, dx = \\int f(g(t)) \\cdot g^\\prime(t) \\, dt
+// $$
+
+// ### 推导过程
+
+// 1. 设 $F(x)$ 是 $f(x)$ 的原函数
+// 2. 则有：
+//    $$
+//    F'(x) = f(x)
+//    $$
+// `}
+                      />
+                    ) : (
+                      '暂无分析'
+                    )}
                   </div>
                 </AccordionItem>
               </Accordion>
