@@ -307,14 +307,18 @@ export default function ClassPage() {
         {classInfo.photos.map((photo) => (
           <div
             key={photo.photo_id}
-            className={`border rounded-lg overflow-hidden relative ${selectedPhotoId === photo.photo_id ? 'brightness-75' : ''}`}
-            onClick={() => handleImageClick(photo.photo_id)}
+            className="border rounded-lg overflow-hidden relative"
           >
-            <img
-              src={photo.photo_url}
-              alt={`板书 ${photo.photo_id}`}
-              className="w-full h-auto"
-            />
+            <div
+              className={`cursor-pointer ${selectedPhotoId === photo.photo_id ? 'brightness-75' : ''}`}
+              onClick={() => handleImageClick(photo.photo_id)}
+            >
+              <img
+                src={photo.photo_url}
+                alt={`板书 ${photo.photo_id}`}
+                className="w-full h-auto"
+              />
+            </div>
             {selectedPhotoId === photo.photo_id && (
               <div className="absolute top-2 right-2 flex space-x-4">
                 <button onClick={() => handleCopyExplanation(photo.explanation || '')}>

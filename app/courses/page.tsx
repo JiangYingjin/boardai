@@ -22,9 +22,9 @@ import {
   Input,
   useDisclosure,
 } from "@nextui-org/react"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { isAuthenticated } from '@/lib/auth'
-import { MoreVertical } from "lucide-react"
+import { PlusIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline'
 
 interface Course {
   course_id: string
@@ -138,29 +138,50 @@ export default function CoursesPage() {
   console.log('渲染课程页面, 当前课程数量:', courses.length)
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar className="shadow-sm">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      <Navbar
+        className="h-16 backdrop-blur-md bg-white/70 border-b border-gray-100 sticky top-0 z-30"
+        maxWidth="lg"
+      >
         <NavbarContent>
           <NavbarBrand>
-            <p className="font-bold text-xl">课程</p>
+            <p className="font-semibold text-xl tracking-tight">我的课程</p>
           </NavbarBrand>
         </NavbarContent>
         <NavbarContent justify="end">
-          <Dropdown>
+          <Dropdown placement="bottom-end">
             <DropdownTrigger>
-              <Button isIconOnly variant="light">
-                <MoreVertical />
+              <Button
+                isIconOnly
+                variant="light"
+                className="rounded-full"
+              >
+                <EllipsisVerticalIcon className="w-5 h-5 text-gray-700" />
               </Button>
             </DropdownTrigger>
-            <DropdownMenu aria-label="用户菜单">
-              <DropdownItem key="username" className="h-14 gap-2">
-                <p className="font-semibold">当前用户</p>
-                <p className="text-default-500">{username}</p>
+            <DropdownMenu
+              aria-label="用户菜单"
+              className="w-56"
+            >
+              <DropdownItem
+                key="profile"
+                className="h-14 gap-2"
+                textValue="用户信息"
+              >
+                <div className="flex flex-col">
+                  <p className="font-medium text-sm">当前用户</p>
+                  <p className="text-sm text-gray-500">{username}</p>
+                </div>
               </DropdownItem>
               <DropdownItem key="password" onPress={onOpen}>
                 修改密码
               </DropdownItem>
-              <DropdownItem key="logout" className="text-danger" color="danger" onPress={handleLogout}>
+              <DropdownItem
+                key="logout"
+                className="text-danger"
+                color="danger"
+                onPress={handleLogout}
+              >
                 注销
               </DropdownItem>
             </DropdownMenu>
@@ -168,8 +189,76 @@ export default function CoursesPage() {
         </NavbarContent>
       </Navbar>
 
+      <div className="max-w-5xl mx-auto p-6">
+        <AnimatePresence mode="wait">
+          {courses.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="text-center py-20"
+            >
+              <p className="text-gray-500">还没有课程，点击右下角添加</p>
+            </motion.div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="grid gap-6 grid-cols-1 md:grid-cols-2"
+            >
+              {courses.map((course, index) => (
+                <motion.div
+                  key={course.course_id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  whileHover={{ scale: 1.02 }}
+                  className="relative"
+                >
+                  <Card
+                    isPressable
+                    onPress={() => router.push(`/courses/${course.course_id}`)}
+                    className="w-full bg-white/70 backdrop-blur-sm hover:bg-white transition-all duration-200"
+                    shadow="sm"
+                  >
+                    <CardBody className="p-6">
+                      <h2 className="text-xl font-medium tracking-tight">{course.course_name}</h2>
+                    </CardBody>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", stiffness: 260, damping: 20 }}
+        >
+          <Button
+            isIconOnly
+            color="primary"
+            size="lg"
+            className="fixed bottom-8 right-8 shadow-lg w-14 h-14 rounded-full hover:scale-110 transition-transform"
+            onClick={() => router.push('/upload')}
+          >
+            <PlusIcon className="w-6 h-6" />
+          </Button>
+        </motion.div>
+      </div>
+
       {/* 修改密码弹窗 */}
-      <Modal isOpen={isOpen} onClose={onClose}>
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        classNames={{
+          base: "bg-white/80 backdrop-blur-md border border-gray-200",
+          header: "border-b border-gray-100",
+          body: "py-6",
+          footer: "border-t border-gray-100"
+        }}
+      >
         <ModalContent>
           <ModalHeader>修改密码</ModalHeader>
           <ModalBody>
@@ -205,38 +294,6 @@ export default function CoursesPage() {
           </ModalFooter>
         </ModalContent>
       </Modal>
-
-      <div className="p-4">
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-          {courses.map(course => (
-            <motion.div
-              key={course.course_id}
-              whileHover={{ scale: 1.02 }}
-              className="relative"
-            >
-              <Card
-                isPressable
-                onPress={() => router.push(`/courses/${course.course_id}`)}
-                className="w-full"
-              >
-                <CardBody className="p-5">
-                  <h2 className="text-xl font-semibold">{course.course_name}</h2>
-                </CardBody>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-
-        <Button
-          isIconOnly
-          color="primary"
-          size="lg"
-          className="fixed bottom-8 right-8 shadow-lg w-16 h-16 text-3xl"
-          onClick={() => router.push('/upload')}
-        >
-          +
-        </Button>
-      </div>
     </div>
   )
 }

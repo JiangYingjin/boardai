@@ -16,6 +16,10 @@ import {
   ModalFooter,
   useDisclosure,
   Input,
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
 } from "@nextui-org/react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
@@ -24,6 +28,9 @@ import {
   EllipsisVerticalIcon,
   TrashIcon,
   ArrowLeftIcon,
+  ChevronLeftIcon,
+  EllipsisHorizontalIcon,
+  PlusIcon,
 } from "@heroicons/react/24/outline"
 import { isAuthenticated } from '@/lib/auth'
 import MarkdownRenderer from '@/app/components/MarkdownRenderer'
@@ -124,44 +131,63 @@ export default function CoursePage() {
   if (!course) return null
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar className="shadow-sm">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      <Navbar
+        className="h-16 backdrop-blur-md bg-white/70 border-b border-gray-100"
+        maxWidth="lg"
+      >
         <NavbarContent justify="start">
           <Button
             isIconOnly
             variant="light"
+            className="rounded-full"
             onPress={() => router.push('/courses')}
           >
-            <ArrowLeftIcon className="w-5 h-5" />
+            <ChevronLeftIcon className="w-5 h-5" />
           </Button>
           <NavbarBrand>
-            <p className="font-bold text-xl">{course.course_name}</p>
+            <p className="font-medium text-xl tracking-tight">{course.course_name}</p>
           </NavbarBrand>
         </NavbarContent>
         <NavbarContent justify="end">
-          <Button
-            isIconOnly
-            variant="light"
-            onPress={() => setShowLongDesc(!showLongDesc)}
-          >
-            {showLongDesc ? (
-              <ArrowsPointingInIcon className="w-5 h-5" />
-            ) : (
-              <ArrowsPointingOutIcon className="w-5 h-5" />
-            )}
-          </Button>
-          <Button
-            isIconOnly
-            variant="light"
-            onPress={onMenuOpen}
-          >
-            <EllipsisVerticalIcon className="w-5 h-5" />
-          </Button>
+          <Dropdown placement="bottom-end">
+            <DropdownTrigger>
+              <Button
+                isIconOnly
+                variant="light"
+                className="rounded-full"
+              >
+                <EllipsisHorizontalIcon className="w-5 h-5" />
+              </Button>
+            </DropdownTrigger>
+            <DropdownMenu
+              aria-label="课程管理"
+              className="w-56"
+            >
+              <DropdownItem
+                key="rename"
+                onPress={() => {
+                  setNewCourseName(course.course_name)
+                  onRenameOpen()
+                }}
+              >
+                修改课程名称
+              </DropdownItem>
+              <DropdownItem
+                key="delete"
+                className="text-danger"
+                color="danger"
+                onPress={onDeleteOpen}
+              >
+                删除课程
+              </DropdownItem>
+            </DropdownMenu>
+          </Dropdown>
         </NavbarContent>
       </Navbar>
 
-      <div className="p-4">
-        <div className="space-y-4">
+      <div className="max-w-5xl mx-auto p-6">
+        <div className="space-y-6">
           <AnimatePresence mode="wait">
             {course.classes.map((classItem) => (
               <motion.div
@@ -174,14 +200,17 @@ export default function CoursePage() {
                 <Card
                   isPressable
                   onPress={() => router.push(`/courses/${courseId}/classes/${classItem.class_id}`)}
-                  className="w-full hover:shadow-md transition-shadow duration-200"
+                  className="w-full bg-white/70 backdrop-blur-sm hover:bg-white"
+                  shadow="sm"
                 >
-                  <CardBody className="p-5">
-                    <h2 className="text-xl font-semibold mb-2">{classItem.title}</h2>
-                    <p className="text-sm text-gray-500 mb-3">
+                  <CardBody className="p-6">
+                    <h2 className="text-xl font-medium tracking-tight mb-2">
+                      {classItem.title || formatDate(classItem.class_date)}
+                    </h2>
+                    <p className="text-sm text-gray-500 mb-4">
                       {formatDate(classItem.class_date)}
                     </p>
-                    <div className="prose prose-sm max-w-none text-gray-700">
+                    <div className="prose prose-sm max-w-none text-gray-600">
                       <MarkdownRenderer
                         content={showLongDesc ? classItem.long_description : classItem.short_description}
                       />
@@ -194,63 +223,25 @@ export default function CoursePage() {
         </div>
       </div>
 
-      {/* 课程管理菜单 */}
-      <Modal isOpen={isMenuOpen} onClose={onMenuClose} size="sm">
+      {/* Modals with consistent styling */}
+      <Modal
+        isOpen={isRenameOpen}
+        onClose={onRenameClose}
+        classNames={{
+          base: "bg-white border border-gray-200",
+          header: "border-b border-gray-100",
+          body: "py-6",
+          footer: "border-t border-gray-100"
+        }}
+      >
         <ModalContent>
-          <ModalHeader className="flex flex-col gap-1">课程管理</ModalHeader>
-          <ModalBody>
-            <Button
-              variant="light"
-              onPress={() => {
-                setNewCourseName(course.course_name)
-                onMenuClose()
-                onRenameOpen()
-              }}
-            >
-              修改课程名称
-            </Button>
-            <Button
-              color="danger"
-              variant="light"
-              onPress={() => {
-                onMenuClose()
-                onDeleteOpen()
-              }}
-              startContent={<TrashIcon className="w-5 h-5" />}
-            >
-              删除课程
-            </Button>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-
-      {/* 删除确认对话框 */}
-      <Modal isOpen={isDeleteOpen} onClose={onDeleteClose}>
-        <ModalContent>
-          <ModalHeader className="text-danger">删除课程</ModalHeader>
-          <ModalBody>
-            <p>确定要删除课程 &quot;{course.course_name}&quot; 吗？此操作无法撤销。</p>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="light" onPress={onDeleteClose}>
-              取消
-            </Button>
-            <Button color="danger" onPress={handleDelete}>
-              删除
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
-      {/* 添加修改课程名称的弹窗 */}
-      <Modal isOpen={isRenameOpen} onClose={onRenameClose}>
-        <ModalContent>
-          <ModalHeader>修改课程名称</ModalHeader>
+          <ModalHeader className="font-medium">修改课程名称</ModalHeader>
           <ModalBody>
             <Input
               label="课程名称"
               value={newCourseName}
               onChange={(e) => setNewCourseName(e.target.value)}
+              variant="bordered"
             />
           </ModalBody>
           <ModalFooter>
@@ -259,6 +250,35 @@ export default function CoursePage() {
             </Button>
             <Button color="primary" onPress={handleRename}>
               确认
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={isDeleteOpen}
+        onClose={onDeleteClose}
+        classNames={{
+          base: "bg-white border border-gray-200",
+          header: "border-b border-gray-100",
+          body: "py-6",
+          footer: "border-t border-gray-100"
+        }}
+      >
+        <ModalContent>
+          <ModalHeader className="font-medium text-danger">删除课程</ModalHeader>
+          <ModalBody>
+            <p className="text-gray-600">
+              确定要删除课程 <span className="font-medium text-gray-900">{course.course_name}</span> 吗？此操作无法撤销。
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="light" onPress={onDeleteClose}>
+              取消
+            </Button>
+            <Button color="danger" onPress={handleDelete}>
+              删除
             </Button>
           </ModalFooter>
         </ModalContent>
