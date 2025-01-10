@@ -9,9 +9,22 @@ import {
   Navbar,
   NavbarContent,
   NavbarBrand,
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
+  Avatar,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Input,
+  useDisclosure,
 } from "@nextui-org/react"
 import { motion } from "framer-motion"
 import { isAuthenticated } from '@/lib/auth'
+import { MoreVertical } from "lucide-react"
 
 interface Course {
   course_id: string
@@ -21,6 +34,12 @@ interface Course {
 export default function CoursesPage() {
   const router = useRouter()
   const [courses, setCourses] = useState<Course[]>([])
+  const [username, setUsername] = useState<string>('')
+  const { isOpen, onOpen, onClose } = useDisclosure()
+  const [oldPassword, setOldPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [error, setError] = useState('')
 
   useEffect(() => {
     const verifyAuth = async () => {
@@ -60,6 +79,62 @@ export default function CoursesPage() {
     verifyAuth()
   }, [router])
 
+  // 获取用户信息
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const response = await fetch('/api/user')
+        const data = await response.json()
+        setUsername(data.username)
+      } catch (error) {
+        console.error('获取用户信息失败:', error)
+      }
+    }
+    fetchUserInfo()
+  }, [])
+
+  const handleChangePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      setError('两次输入的密码不一致')
+      return
+    }
+
+    try {
+      const response = await fetch('/api/user/password', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          oldPassword,
+          newPassword,
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || '修改密码失败')
+      }
+
+      onClose()
+      setOldPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+      setError('')
+    } catch (error) {
+      setError(error.message)
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+      router.push('/auth')
+    } catch (error) {
+      console.error('注销失败:', error)
+    }
+  }
+
   console.log('渲染课程页面, 当前课程数量:', courses.length)
 
   return (
@@ -70,7 +145,66 @@ export default function CoursesPage() {
             <p className="font-bold text-xl">课程</p>
           </NavbarBrand>
         </NavbarContent>
+        <NavbarContent justify="end">
+          <Dropdown>
+            <DropdownTrigger>
+              <Button isIconOnly variant="light">
+                <MoreVertical />
+              </Button>
+            </DropdownTrigger>
+            <DropdownMenu aria-label="用户菜单">
+              <DropdownItem key="username" className="h-14 gap-2">
+                <p className="font-semibold">当前用户</p>
+                <p className="text-default-500">{username}</p>
+              </DropdownItem>
+              <DropdownItem key="password" onPress={onOpen}>
+                修改密码
+              </DropdownItem>
+              <DropdownItem key="logout" className="text-danger" color="danger" onPress={handleLogout}>
+                注销
+              </DropdownItem>
+            </DropdownMenu>
+          </Dropdown>
+        </NavbarContent>
       </Navbar>
+
+      {/* 修改密码弹窗 */}
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <ModalContent>
+          <ModalHeader>修改密码</ModalHeader>
+          <ModalBody>
+            {error && <p className="text-danger text-sm mb-2">{error}</p>}
+            <Input
+              type="password"
+              label="当前密码"
+              value={oldPassword}
+              onChange={(e) => setOldPassword(e.target.value)}
+              className="mb-2"
+            />
+            <Input
+              type="password"
+              label="新密码"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="mb-2"
+            />
+            <Input
+              type="password"
+              label="确认新密码"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="light" onPress={onClose}>
+              取消
+            </Button>
+            <Button color="primary" onPress={handleChangePassword}>
+              确认
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       <div className="p-4">
         <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
