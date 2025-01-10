@@ -15,6 +15,7 @@ import {
   ModalBody,
   ModalFooter,
   useDisclosure,
+  Input,
 } from "@nextui-org/react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
@@ -48,6 +49,8 @@ export default function CoursePage() {
   const [showLongDesc, setShowLongDesc] = useState(false)
   const { isOpen: isMenuOpen, onOpen: onMenuOpen, onClose: onMenuClose } = useDisclosure()
   const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure()
+  const { isOpen: isRenameOpen, onOpen: onRenameOpen, onClose: onRenameClose } = useDisclosure()
+  const [newCourseName, setNewCourseName] = useState('')
 
   const { courseId } = params
 
@@ -87,6 +90,25 @@ export default function CoursePage() {
       router.push('/courses')
     } catch (error) {
       console.error('删除课程时出错:', error)
+    }
+  }
+
+  const handleRename = async () => {
+    try {
+      const response = await fetch(`/api/courses/${courseId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ courseName: newCourseName }),
+      })
+
+      if (!response.ok) throw new Error('更新失败')
+
+      setCourse(prev => prev ? { ...prev, course_name: newCourseName } : null)
+      onRenameClose()
+    } catch (error) {
+      console.error('更新课程名称失败:', error)
     }
   }
 
@@ -178,6 +200,16 @@ export default function CoursePage() {
           <ModalHeader className="flex flex-col gap-1">课程管理</ModalHeader>
           <ModalBody>
             <Button
+              variant="light"
+              onPress={() => {
+                setNewCourseName(course.course_name)
+                onMenuClose()
+                onRenameOpen()
+              }}
+            >
+              修改课程名称
+            </Button>
+            <Button
               color="danger"
               variant="light"
               onPress={() => {
@@ -205,6 +237,28 @@ export default function CoursePage() {
             </Button>
             <Button color="danger" onPress={handleDelete}>
               删除
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* 添加修改课程名称的弹窗 */}
+      <Modal isOpen={isRenameOpen} onClose={onRenameClose}>
+        <ModalContent>
+          <ModalHeader>修改课程名称</ModalHeader>
+          <ModalBody>
+            <Input
+              label="课程名称"
+              value={newCourseName}
+              onChange={(e) => setNewCourseName(e.target.value)}
+            />
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="light" onPress={onRenameClose}>
+              取消
+            </Button>
+            <Button color="primary" onPress={handleRename}>
+              确认
             </Button>
           </ModalFooter>
         </ModalContent>
