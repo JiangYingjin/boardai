@@ -37,7 +37,7 @@
     ".next/types/**/*.ts",
     "**/*.ts",
     "**/*.tsx"
-  ],
+, "app/api/upload/worker.js"  ],
   "exclude": [
     "node_modules"
   ]

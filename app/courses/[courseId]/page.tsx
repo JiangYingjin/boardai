@@ -1,7 +1,6 @@
 'use client'
 
-import React from 'react'
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import {
   Navbar,
@@ -25,6 +24,7 @@ import {
   TrashIcon,
   ArrowLeftIcon,
 } from "@heroicons/react/24/outline"
+import { isAuthenticated } from '@/lib/auth'
 
 interface Class {
   class_id: number
@@ -51,6 +51,20 @@ export default function CoursePage() {
   const { courseId } = params
 
   useEffect(() => {
+    const verifyAuth = async () => {
+      try {
+        const _isAuthenticated = await isAuthenticated()
+        if (!_isAuthenticated) {
+          router.push('/auth')
+          return
+        }
+        await fetchCourse()
+      } catch (error) {
+        console.error('验证登录状态时出错:', error)
+        router.push('/auth')
+      }
+    }
+
     const fetchCourse = async () => {
       try {
         const response = await fetch(`/api/courses/${courseId}`)
@@ -61,8 +75,8 @@ export default function CoursePage() {
       }
     }
 
-    fetchCourse()
-  }, [courseId])
+    verifyAuth()
+  }, [courseId, router])
 
   const handleDelete = async () => {
     try {

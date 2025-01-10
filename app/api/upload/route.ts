@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { ResultSetHeader, RowDataPacket } from 'mysql2'
 import { verify } from 'jsonwebtoken'
 import { cookies } from 'next/headers'
+import { Worker } from 'worker_threads';
 
 const UPLOAD_DIR = '/www/share/proj/BoardAI'
 const BASE_URL = 'https://s.jyj.cx/proj/BoardAI'
@@ -14,6 +15,13 @@ const JWT_SECRET = process.env.JWT_SECRET || 'jwt'
 
 interface CourseResult extends RowDataPacket {
     id: number
+}
+
+interface ImageInfo {
+    photoId: number;
+    fileUrl: string;
+    filePath: string;
+    creationTime: Date;
 }
 
 export async function POST(request: Request) {
@@ -135,6 +143,7 @@ export async function POST(request: Request) {
                 })
             }
 
+            const imageInfos: ImageInfo[] = []
             console.log('开始处理图片文件...')
             for (let i = 0; i < images.length; i++) {
                 const image = images[i]
@@ -169,14 +178,45 @@ export async function POST(request: Request) {
 
                 console.log('创建图片数据库记录...')
                 console.log('执行SQL: INSERT INTO board_photos')
-                const [photoResult] = await db.query(
+                const [photoResult] = await db.query<ResultSetHeader>(
                     'INSERT INTO board_photos (class_id, photo_url, created_at) VALUES (?, ?, ?)',
                     [finalClassId, fileUrl, creationTime]
                 )
                 console.log('图片记录创建结果:', photoResult)
+
+                imageInfos.push({
+                    photoId: photoResult.insertId,
+                    fileUrl,
+                    filePath,
+                    creationTime
+                });
             }
 
             console.log('=== Upload completed successfully ===')
+
+            // 启动 worker 线程
+            if (imageInfos.length > 0) {
+                console.log('启动 worker 线程进行图片分析...')
+                const worker = new Worker(path.join(process.cwd(), 'app', 'api', 'upload', 'worker.js'), {
+                    workerData: {
+                        imageInfos,
+                        finalClassId
+                    }
+                })
+
+                worker.on('message', (message) => {
+                    console.log('worker 线程消息:', message);
+                });
+
+                worker.on('error', (error) => {
+                    console.error('worker 线程错误:', error);
+                });
+
+                worker.on('exit', (code) => {
+                    console.log(`worker 线程已退出，退出代码: ${code}`);
+                });
+            }
+
             return NextResponse.json({
                 courseId: finalCourseId,
                 classId: finalClassId

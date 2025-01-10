@@ -11,6 +11,7 @@ import {
   NavbarBrand,
 } from "@nextui-org/react"
 import { motion } from "framer-motion"
+import { isAuthenticated } from '@/lib/auth'
 
 interface Course {
   course_id: string
@@ -20,12 +21,6 @@ interface Course {
 export default function CoursesPage() {
   const router = useRouter()
   const [courses, setCourses] = useState<Course[]>([])
-
-  const isAuthenticated = async () => {
-    const response = await fetch('/api/auth')
-    const _isAuthenticated = await response.json()
-    return _isAuthenticated
-  }
 
   useEffect(() => {
     const verifyAuth = async () => {

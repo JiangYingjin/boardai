@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { Button, Accordion, AccordionItem, Spinner } from "@nextui-org/react"
 import { ChevronLeft, Plus, Settings } from "lucide-react"
 import { ArrowDownTrayIcon, ClipboardDocumentIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { isAuthenticated } from '@/lib/auth'
 
 interface BoardPhoto {
   photo_id: number
@@ -42,8 +43,8 @@ export default function ClassPage() {
 
     const init = async () => {
       try {
-        const authResponse = await fetch('/api/auth')
-        if (!authResponse.ok) {
+        const _isAuthenticated = await isAuthenticated()
+        if (!_isAuthenticated) {
           router.push('/auth')
           return
         }
