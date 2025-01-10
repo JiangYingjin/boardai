@@ -1,19 +1,18 @@
 import { Worker } from 'worker_threads'
-import path from 'path'
-import type { WorkerData, WorkerResponse } from '@/app/api/upload/types'
+import type { WorkerData } from './types'
 
-export { WorkerData }
+export type { WorkerData }
 
-export function createWorker(workerData: WorkerData): Promise<void> {
+export async function createWorker(workerData: WorkerData): Promise<void> {
     return new Promise((resolve, reject) => {
         const worker = new Worker(
-            path.join(process.cwd(), 'app', 'api', 'upload', 'worker.impl.ts'),
+            '/root/proj/boardai/dist/worker.impl.js',
             {
                 workerData
             }
         )
 
-        worker.on('message', (message: WorkerResponse) => {
+        worker.on('message', (message) => {
             if (message.success) {
                 resolve()
             } else {

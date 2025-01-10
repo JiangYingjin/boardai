@@ -39,7 +39,7 @@
     "**/*.ts",
     "**/*.tsx",
     "app/api/upload/worker.js"
-  ],
+, "next.config.mjs"  ],
   "exclude": [
     "node_modules"
   ]

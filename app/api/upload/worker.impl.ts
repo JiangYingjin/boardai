@@ -4,7 +4,7 @@ import { readFile, writeFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import OpenAI from 'openai'
 import path from 'path'
-import type { WorkerData, WorkerResponse } from '@/app/api/upload/types'
+import type { WorkerData, WorkerResponse } from './types'
 import { RowDataPacket } from 'mysql2'
 
 const data = workerData as WorkerData

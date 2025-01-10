@@ -1,5 +1,5 @@
 {
-    "name": "next",
+    "name": "boardai",
     "cwd": "/root/proj/boardai/build",
     "script": "pnpm start",
     "output": "../next.log",

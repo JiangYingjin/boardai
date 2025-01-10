@@ -156,7 +156,7 @@ async function updateCourse(courseId: string, courseName: string) {
 
         const decoded = verify(token, JWT_SECRET) as { userId: number }
 
-        const [result] = await db.query(
+        await db.query(
             'UPDATE courses SET course_name = ? WHERE course_id = ? AND user_id = ?',
             [courseName, courseId, decoded.userId]
         )
@@ -192,7 +192,7 @@ async function deleteCourse(courseId: string) {
 }
 
 // 获取课堂信息
-export async function getClass(courseId: string, classId: string) {
+async function getClass(courseId: string, classId: string) {
     try {
         const cookieStore = await cookies()
         const token = cookieStore.get('token')?.value
@@ -238,7 +238,7 @@ export async function getClass(courseId: string, classId: string) {
 }
 
 // 删除课堂
-export async function deleteClass(courseId: string, classId: string) {
+async function deleteClass(courseId: string, classId: string) {
     try {
         const cookieStore = await cookies()
         const token = cookieStore.get('token')?.value
