@@ -3,6 +3,48 @@ const mysql = require('mysql2/promise');
 const { readFile } = require('fs/promises');
 const OpenAI = require('openai');
 
+/*
+   "Gemini": [
+            "gemini-2.0-flash-exp",
+            "gemini-exp-1206",
+            "gemini-2.0-flash-thinking-exp-1219",
+        ],
+        "OhMyGPT": ["gpt-4o-2024-11-20", "o1-mini", "gpt-4o-mini"],
+        "硅基流动": [
+            "OpenGVLab/InternVL2-26B",
+            "deepseek-ai/deepseek-vl2",  # 虽然输出快，但是比较落后
+            "AIDC-AI/Marco-o1",
+            "Qwen/QwQ-32B-Preview",
+            "Qwen/QVQ-72B-Preview",
+        ],
+        "零一万物": [
+            # "yi-lightning",  # 输出慢
+        ],
+        "DeepSeek": [
+            "deepseek-chat",
+        ],
+        "智谱清言": [
+            # "glm-4-airx",  # 高速低价，但太差劲
+        ],
+    },
+    "not_in_nextchat": {
+        "OhMyGPT": [
+            "doubao-vision-pro-32k-241028",
+            "doubao-vision-lite-32k-241015",
+            "doubao-pro-256k-241115",
+            "doubao-pro-32k-241215",
+        ],
+        "硅基流动": [
+            "deepseek-ai/DeepSeek-V2.5",  # 输出太慢
+            "Qwen/Qwen2-VL-72B-Instruct",
+            "Qwen/Qwen2.5-72B-Instruct",
+            "Qwen/Qwen2.5-72B-Instruct-128K",
+            "meta-llama/Llama-3.3-70B-Instruct",
+            "Pro/black-forest-labs/FLUX.1-schnell",  # 生图
+        ],
+    },
+*/
+
 const db = mysql.createPool({
     host: process.env.MYSQL_HOST,
     user: process.env.MYSQL_USER,
@@ -99,74 +141,160 @@ async function analyzeImage(photoId, filePath) {
 
 async function generateTitle(fullExplanation, finalClassId) {
     console.log('生成课堂标题');
-    const response = await openai.chat.completions.create({
-        model: "doubao-pro-256k-241115",
-        // model: "gemini-2.0-flash-exp",
-        max_tokens: 4000,
-        messages: [
-            {
-                role: "user",
-                content: `根据课堂内容生成课堂笔记标题。要求简洁明了，只输出一行字，不超过10个字。\n课堂内容：${fullExplanation}`
+    try {
+        const responseStream = await openai.chat.completions.create({
+            // model: "gemini-2.0-flash-exp",
+            model: "doubao-pro-256k-241115",
+            max_tokens: 4000,
+            messages: [
+                {
+                    role: "user",
+                    content: `根据课堂内容生成课堂笔记标题。要求简洁明了，只输出一行字，不超过10个字。\n课堂内容：${fullExplanation}`
+                }
+            ],
+            stream: true,
+        });
+
+        let title = '';
+        let lastInsertTime = Date.now();
+
+        for await (const chunk of responseStream) {
+            title += chunk.choices[0]?.delta?.content || '';
+            const isComplete = chunk.choices[0]?.finish_reason === 'stop';
+            const titleToSave = isComplete ? title : title + ' ...';
+
+            const currentTime = Date.now();
+            if (currentTime - lastInsertTime > 1000 || isComplete) {
+                await db.query(
+                    'UPDATE classes SET title = ? WHERE class_id = ?',
+                    [titleToSave, finalClassId]
+                );
+                lastInsertTime = currentTime;
             }
-        ]
-    });
+        }
 
-    const title = response.choices[0].message.content;
-    console.log('生成的 title:', title);
-
-    await db.query(
-        'UPDATE classes SET title = ? WHERE class_id = ?',
-        [title, finalClassId]
-    );
-    console.log('课堂标题更新成功，classId:', finalClassId, 'title:', title);
+        return title;
+    } catch (error) {
+        console.error('生成标题失败:', error);
+        throw error;
+    }
 }
 
 async function generateShortDescription(fullExplanation, finalClassId) {
     console.log('生成课堂简短描述');
-    const response = await openai.chat.completions.create({
-        model: "doubao-pro-256k-241115",
-        // model: "gemini-2.0-flash-exp",
-        max_tokens: 4000,
-        messages: [
-            {
-                role: "user",
-                content: `根据以下内容生成课堂的简短描述：\n${fullExplanation}`
+    try {
+        const responseStream = await openai.chat.completions.create({
+            model: "gpt-4o-2024-11-20",
+            // model: "gemini-2.0-flash-exp",
+            // model: "doubao-pro-256k-241115",
+            max_tokens: 4000,
+            messages: [
+                {
+                    role: "user",
+                    content: `
+# 任务
+根据板书内容简要概括该课堂的知识点
+
+# 要求
+- 避免输出标题
+
+# 板书内容
+${fullExplanation}`
+                }
+            ],
+            stream: true,
+        });
+
+        let shortDescription = '';
+        let lastInsertTime = Date.now();
+
+        for await (const chunk of responseStream) {
+            shortDescription += chunk.choices[0]?.delta?.content || '';
+            const isComplete = chunk.choices[0]?.finish_reason === 'stop';
+            const descriptionToSave = isComplete ? shortDescription : shortDescription + ' ...';
+
+            const currentTime = Date.now();
+            if (currentTime - lastInsertTime > 1000 || isComplete) {
+                await db.query(
+                    'UPDATE classes SET short_description = ? WHERE class_id = ?',
+                    [descriptionToSave, finalClassId]
+                );
+                lastInsertTime = currentTime;
             }
-        ]
-    });
+        }
 
-    const shortDescription = response.choices[0].message.content;
-    console.log('生成的 short_description:', shortDescription);
-
-    await db.query(
-        'UPDATE classes SET short_description = ? WHERE class_id = ?',
-        [shortDescription, finalClassId]
-    );
-    console.log('课堂简短描述更新成功，classId:', finalClassId, 'shortDescription:', shortDescription);
+        return shortDescription;
+    } catch (error) {
+        console.error('生成简短描述失败:', error);
+        throw error;
+    }
 }
 
 async function generateLongDescription(fullExplanation, finalClassId) {
     console.log('生成课堂详细描述');
-    const response = await openai.chat.completions.create({
-        model: "doubao-pro-256k-241115",
-        // model: "gemini-2.0-flash-exp",
-        max_tokens: 4000,
-        messages: [
-            {
-                role: "user",
-                content: `根据以下内容生成课堂的详细描述：\n${fullExplanation}`
+    try {
+        const responseStream = await openai.chat.completions.create({
+            model: "gpt-4o-2024-11-20",
+            // model: "gemini-2.0-flash-exp",
+            // model: "doubao-pro-256k-241115",
+            max_tokens: 4000,
+            messages: [
+                {
+                    role: "user",
+                    content: `
+# 任务
+根据板书内容梳理该课堂的详细知识点
+
+# 要求
+- 避免输出标题
+
+# 板书内容
+${fullExplanation}`
+                }
+            ],
+            stream: true,
+        });
+
+        let longDescription = '';
+        let lastInsertTime = Date.now();
+
+        for await (const chunk of responseStream) {
+            console.log('接收到的流数据块:', chunk);
+            longDescription += chunk.choices[0]?.delta?.content || '';
+            const isComplete = chunk.choices[0]?.finish_reason === 'stop';
+            const descriptionToSave = isComplete ? longDescription : longDescription + ' ...';
+            console.log('当前 long_description:', descriptionToSave);
+
+            const currentTime = Date.now();
+            if (currentTime - lastInsertTime > 1000 || isComplete) {
+                console.log('准备更新数据库，classId:', finalClassId, 'longDescription:', descriptionToSave);
+                await db.query(
+                    'UPDATE classes SET long_description = ? WHERE class_id = ?',
+                    [descriptionToSave, finalClassId]
+                );
+
+                // 可选：保存到临时文件
+                const fs = require('fs');
+                const path = require('path');
+                const cwd = process.cwd();
+                const tmpDir = path.join(cwd, 'tmp');
+                if (!fs.existsSync(tmpDir)) {
+                    fs.mkdirSync(tmpDir, { recursive: true });
+                }
+                const filePath = path.join(tmpDir, `class_${finalClassId}_long_desc.md`);
+                fs.writeFileSync(filePath, descriptionToSave, 'utf8');
+                console.log(`长描述文件保存成功: ${filePath}`);
+
+                console.log('长描述数据库更新成功');
+                lastInsertTime = currentTime;
             }
-        ]
-    });
+        }
 
-    const longDescription = response.choices[0].message.content;
-    console.log('生成的 long_description:', longDescription);
-
-    await db.query(
-        'UPDATE classes SET long_description = ? WHERE class_id = ?',
-        [longDescription, finalClassId]
-    );
-    console.log('课堂详细描述更新成功，classId:', finalClassId, 'longDescription:', longDescription);
+        return longDescription;
+    } catch (error) {
+        console.error('生成长描述失败:', error);
+        throw error;
+    }
 }
 
 (async () => {

@@ -25,6 +25,7 @@ import {
   ArrowLeftIcon,
 } from "@heroicons/react/24/outline"
 import { isAuthenticated } from '@/lib/auth'
+import MarkdownRenderer from '@/app/components/MarkdownRenderer'
 
 interface Class {
   class_id: number
@@ -151,16 +152,18 @@ export default function CoursePage() {
                 <Card
                   isPressable
                   onPress={() => router.push(`/courses/${courseId}/classes/${classItem.class_id}`)}
-                  className="w-full"
+                  className="w-full hover:shadow-md transition-shadow duration-200"
                 >
                   <CardBody className="p-5">
                     <h2 className="text-xl font-semibold mb-2">{classItem.title}</h2>
                     <p className="text-sm text-gray-500 mb-3">
                       {formatDate(classItem.class_date)}
                     </p>
-                    <p className="text-gray-700">
-                      {showLongDesc ? classItem.long_description : classItem.short_description}
-                    </p>
+                    <div className="prose prose-sm max-w-none text-gray-700">
+                      <MarkdownRenderer
+                        content={showLongDesc ? classItem.long_description : classItem.short_description}
+                      />
+                    </div>
                   </CardBody>
                 </Card>
               </motion.div>

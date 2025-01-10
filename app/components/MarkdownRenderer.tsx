@@ -5,7 +5,7 @@ import 'katex/dist/katex.min.css';
 import styles from '@/app/components/math.module.css';
 
 interface MarkdownRendererProps {
-  content: string;
+  content: string | null;
   className?: string;
 }
 
@@ -38,9 +38,11 @@ const markdownToHtml = (markdown: string): string => {
 };
 
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
-  console.log(' Markdown content...');
+  if (!content) {
+    return <div className={styles.container}></div>;
+  }
+
   const htmlContent = markdownToHtml(content);
-  console.log('Rendered HTML content:', htmlContent);
 
   return (
     <div className={styles.container}>

@@ -6,8 +6,6 @@ import { Button, Accordion, AccordionItem, Spinner, Modal, ModalContent, ModalHe
 import { ChevronLeft, Plus, Settings, ChevronDownIcon, ChevronUpIcon } from "lucide-react"
 import { ArrowDownTrayIcon, ClipboardDocumentIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { isAuthenticated } from '@/lib/auth'
-import Markdown from 'react-markdown'
-import rehypeExternalLinks from 'rehype-external-links'
 import MarkdownRenderer from '@/app/components/MarkdownRenderer'
 
 interface BoardPhoto {
@@ -37,6 +35,16 @@ export default function ClassPage() {
 
   const { isOpen: isMenuOpen, onOpen: onMenuOpen, onClose: onMenuClose } = useDisclosure()
   const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure()
+
+  // 添加一个 ref 来追踪组件是否已卸载
+  const isUnmounted = useRef(false)
+
+  // 在组件卸载时更新 ref
+  useEffect(() => {
+    return () => {
+      isUnmounted.current = true
+    }
+  }, [])
 
   useEffect(() => {
     const courseId = params?.courseId
@@ -172,47 +180,57 @@ export default function ClassPage() {
     // 先获取初始结果并立即返回给用户显示
     const initialExplanation = await fetchExplanation(photoId)
     if (initialExplanation) {
-      setClassInfo(prev => ({
-        ...prev!,
-        photos: prev!.photos.map(p =>
-          p.photo_id === photoId
-            ? { ...p, explanation: initialExplanation }
-            : p
-        )
-      }))
+      if (!isUnmounted.current) {
+        setClassInfo(prev => ({
+          ...prev!,
+          photos: prev!.photos.map(p =>
+            p.photo_id === photoId
+              ? { ...p, explanation: initialExplanation }
+              : p
+          )
+        }))
+      }
     }
 
     // 如果初始结果不完整，则在后台继续轮询
     if (initialExplanation && initialExplanation.endsWith('...')) {
       // 使用 Promise 来处理后台轮询
       (async () => {
-        while (retryCount < maxRetries) {
+        while (retryCount < maxRetries && !isUnmounted.current) {
           await new Promise(resolve => setTimeout(resolve, 1000))
           const newExplanation = await fetchExplanation(photoId)
 
+          if (isUnmounted.current) {
+            break
+          }
+
           if (newExplanation && !newExplanation.endsWith('...')) {
             // 获取到完整结果，更新显示并结束轮询
-            setClassInfo(prev => ({
-              ...prev!,
-              photos: prev!.photos.map(p =>
-                p.photo_id === photoId
-                  ? { ...p, explanation: newExplanation }
-                  : p
-              )
-            }))
+            if (!isUnmounted.current) {
+              setClassInfo(prev => ({
+                ...prev!,
+                photos: prev!.photos.map(p =>
+                  p.photo_id === photoId
+                    ? { ...p, explanation: newExplanation }
+                    : p
+                )
+              }))
+            }
             break
           }
 
           // 如果新结果不同于当前显示的结果，则更新显示
           if (newExplanation && newExplanation !== initialExplanation) {
-            setClassInfo(prev => ({
-              ...prev!,
-              photos: prev!.photos.map(p =>
-                p.photo_id === photoId
-                  ? { ...p, explanation: newExplanation }
-                  : p
-              )
-            }))
+            if (!isUnmounted.current) {
+              setClassInfo(prev => ({
+                ...prev!,
+                photos: prev!.photos.map(p =>
+                  p.photo_id === photoId
+                    ? { ...p, explanation: newExplanation }
+                    : p
+                )
+              }))
+            }
           }
 
           retryCount++
