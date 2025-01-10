@@ -23,14 +23,10 @@ import {
 } from "@nextui-org/react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
-  ArrowsPointingInIcon,
-  ArrowsPointingOutIcon,
-  EllipsisVerticalIcon,
-  TrashIcon,
-  ArrowLeftIcon,
   ChevronLeftIcon,
   EllipsisHorizontalIcon,
-  PlusIcon,
+  ChevronUpIcon,
+  ChevronDownIcon,
 } from "@heroicons/react/24/outline"
 import { isAuthenticated } from '@/lib/auth'
 import MarkdownRenderer from '@/app/components/MarkdownRenderer'
@@ -54,7 +50,6 @@ export default function CoursePage() {
   const params = useParams<{ courseId: string }>()
   const [course, setCourse] = useState<Course | null>(null)
   const [showLongDesc, setShowLongDesc] = useState(false)
-  const { isOpen: isMenuOpen, onOpen: onMenuOpen, onClose: onMenuClose } = useDisclosure()
   const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure()
   const { isOpen: isRenameOpen, onOpen: onRenameOpen, onClose: onRenameClose } = useDisclosure()
   const [newCourseName, setNewCourseName] = useState('')
@@ -78,7 +73,7 @@ export default function CoursePage() {
 
     const fetchCourse = async () => {
       try {
-        const response = await fetch(`/api/courses/${courseId}`)
+        const response = await fetch(`/api/courses?action=getCourse&courseId=${courseId}`)
         const data = await response.json()
         setCourse(data)
       } catch (error) {
@@ -91,8 +86,8 @@ export default function CoursePage() {
 
   const handleDelete = async () => {
     try {
-      await fetch(`/api/courses/${courseId}`, {
-        method: 'DELETE',
+      await fetch(`/api/courses?action=deleteCourse&courseId=${courseId}`, {
+        method: 'POST',
       })
       router.push('/courses')
     } catch (error) {
@@ -102,8 +97,8 @@ export default function CoursePage() {
 
   const handleRename = async () => {
     try {
-      const response = await fetch(`/api/courses/${courseId}`, {
-        method: 'PUT',
+      const response = await fetch(`/api/courses?action=updateCourse&courseId=${courseId}`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -150,6 +145,18 @@ export default function CoursePage() {
           </NavbarBrand>
         </NavbarContent>
         <NavbarContent justify="end">
+          <Button
+            variant="light"
+            isIconOnly
+            className="rounded-full"
+            onPress={() => setShowLongDesc(!showLongDesc)}
+          >
+            {showLongDesc ? (
+              <ChevronUpIcon className="w-5 h-5" />
+            ) : (
+              <ChevronDownIcon className="w-5 h-5" />
+            )}
+          </Button>
           <Dropdown placement="bottom-end">
             <DropdownTrigger>
               <Button

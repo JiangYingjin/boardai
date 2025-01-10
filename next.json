@@ -1,0 +1,7 @@
+{
+    "name": "next",
+    "cwd": "/root/proj/boardai/build",
+    "script": "pnpm start",
+    "output": "../next.log",
+    "error": "../next.log"
+}

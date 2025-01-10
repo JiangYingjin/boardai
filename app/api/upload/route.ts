@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { ResultSetHeader, RowDataPacket } from 'mysql2'
 import { verify } from 'jsonwebtoken'
 import { cookies } from 'next/headers'
-import { Worker } from 'worker_threads';
+import { createWorker, type WorkerData } from './worker'
 
 const UPLOAD_DIR = '/www/share/proj/BoardAI'
 const BASE_URL = 'https://s.jyj.cx/proj/BoardAI'
@@ -194,30 +194,20 @@ export async function POST(request: Request) {
 
             console.log('=== Upload completed successfully ===')
 
-            // 启动 worker 线程
-            if (imageInfos.length > 0) {
-                console.log('启动 worker 线程进行图片分析...')
-                const worker = new Worker(path.join(process.cwd(), 'app', 'api', 'upload', 'worker.js'), {
-                    workerData: {
-                        imageInfos,
-                        finalClassId
-                    }
-                })
-
-                worker.on('message', (message) => {
-                    console.log('worker 线程消息:', message);
-                });
-
-                worker.on('error', (error) => {
-                    console.error('worker 线程错误:', error);
-                });
-
-                worker.on('exit', (code) => {
-                    console.log(`worker 线程已退出，退出代码: ${code}`);
-                });
+            // 假设我们已经保存了图片并获得了 photoIds
+            const workerData: WorkerData = {
+                imageInfos: imageInfos.map(img => ({
+                    photoId: img.photoId,
+                    filePath: img.filePath
+                })),
+                finalClassId: finalClassId
             }
 
+            // 启动 worker 进行分析
+            await createWorker(workerData)
+
             return NextResponse.json({
+                success: true,
                 courseId: finalCourseId,
                 classId: finalClassId
             })

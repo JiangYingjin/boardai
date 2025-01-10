@@ -3,7 +3,8 @@
     "lib": [
       "dom",
       "dom.iterable",
-      "esnext"
+      "esnext",
+      "webworker"
     ],
     "allowJs": true,
     "skipLibCheck": true,
@@ -24,7 +25,7 @@
     "types": [
       "node",
     ],
-    "target": "ES2017",
+    "target": "esnext",
     "baseUrl": ".",
     "paths": {
       "@/*": [

@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev && print https://lan.jyj.cx",
-    "d": "next build",
-    "start": "next start",
+    "d": "next build && rm -rf build && mkdir build && rsync -az .next build --exclude cache && ln -sf ../public build/public && ln -sf ../node_modules build/node_modules && ln -sf ../package.json build/package.json && find . -name '.env*' | xargs -I {} ln -s .{} build && pm2 restart boardai",
+    "start": "next start --port 8033",
     "lint": "next lint"
   },
   "dependencies": {

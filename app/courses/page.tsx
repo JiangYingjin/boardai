@@ -13,7 +13,6 @@ import {
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
-  Avatar,
   Modal,
   ModalContent,
   ModalHeader,

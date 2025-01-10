@@ -2,9 +2,9 @@
 
 import React, { useEffect, useState, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { Button, Accordion, AccordionItem, Spinner, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from "@nextui-org/react"
+import { Button, Accordion, AccordionItem, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from "@nextui-org/react"
 import { ChevronLeft, Plus, Settings, ChevronDownIcon, ChevronUpIcon } from "lucide-react"
-import { ArrowDownTrayIcon, ClipboardDocumentIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { ClipboardDocumentIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { isAuthenticated } from '@/lib/auth'
 import MarkdownRenderer from '@/app/components/MarkdownRenderer'
 
@@ -64,7 +64,7 @@ export default function ClassPage() {
           return
         }
 
-        const response = await fetch(`/api/courses/${courseId}/classes/${classId}`)
+        const response = await fetch(`/api/courses?action=getClass&courseId=${courseId}&classId=${classId}`)
         if (!response.ok) {
           throw new Error('Failed to fetch class info')
         }
@@ -123,7 +123,7 @@ export default function ClassPage() {
 
   const fetchExplanation = async (photoId: number) => {
     try {
-      const response = await fetch(`/api/photos/${photoId}/analysis`)
+      const response = await fetch(`/api/photos?action=getAnalysis&photoId=${photoId}`)
       if (!response.ok) throw new Error('获取分析失败')
       const data = await response.json()
       return data.explanation
@@ -143,11 +143,10 @@ export default function ClassPage() {
 
   const handleDelete = async (photoId: number) => {
     try {
-      const response = await fetch(`/api/photos/${photoId}`, {
-        method: 'DELETE',
+      const response = await fetch(`/api/photos?action=deletePhoto&photoId=${photoId}`, {
+        method: 'POST',
       })
       if (response.ok) {
-        // 更新状态以移除已删除的图片
         setClassInfo(prev => ({
           ...prev!,
           photos: prev!.photos.filter(photo => photo.photo_id !== photoId),
@@ -162,8 +161,8 @@ export default function ClassPage() {
 
   const handleDeleteClass = async () => {
     try {
-      const response = await fetch(`/api/courses/${params.courseId}/classes/${params.classId}`, {
-        method: 'DELETE',
+      const response = await fetch(`/api/courses?action=deleteClass&courseId=${params.courseId}&classId=${params.classId}`, {
+        method: 'POST',
       })
       if (!response.ok) {
         throw new Error('删除失败')
@@ -320,12 +319,24 @@ export default function ClassPage() {
               />
             </div>
             {selectedPhotoId === photo.photo_id && (
-              <div className="absolute top-2 right-2 flex space-x-4">
-                <button onClick={() => handleCopyExplanation(photo.explanation || '')}>
-                  <ClipboardDocumentIcon className="w-8 h-8" />
+              <div className="absolute top-2 right-2 flex space-x-2">
+                <button
+                  onClick={() => handleCopyExplanation(photo.explanation || '')}
+                  className="w-9 h-9 rounded-full bg-white/90 hover:bg-white shadow-lg 
+                    flex items-center justify-center transition-all duration-200 
+                    hover:scale-110 backdrop-blur-sm group"
+                >
+                  <ClipboardDocumentIcon className="w-5 h-5 text-gray-600 
+                    group-hover:text-primary-500 transition-colors duration-200" />
                 </button>
-                <button onClick={() => handleDelete(photo.photo_id)}>
-                  <TrashIcon className="w-8 h-8" />
+                <button
+                  onClick={() => handleDelete(photo.photo_id)}
+                  className="w-9 h-9 rounded-full bg-white/90 hover:bg-white shadow-lg 
+                    flex items-center justify-center transition-all duration-200 
+                    hover:scale-110 backdrop-blur-sm group"
+                >
+                  <TrashIcon className="w-5 h-5 text-gray-600 
+                    group-hover:text-danger-500 transition-colors duration-200" />
                 </button>
               </div>
             )}
