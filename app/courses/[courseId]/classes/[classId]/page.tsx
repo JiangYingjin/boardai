@@ -32,6 +32,7 @@ export default function ClassPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [selectedPhotoId, setSelectedPhotoId] = useState<number | null>(null)
   const [expandAll, setExpandAll] = useState(false)
+  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set())
 
   const { isOpen: isMenuOpen, onOpen: onMenuOpen, onClose: onMenuClose } = useDisclosure()
   const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure()
@@ -244,8 +245,12 @@ export default function ClassPage() {
   const toggleAllExplanations = async () => {
     setExpandAll(prev => !prev)
 
-    // 如果是展开操作，则获取所有未加载解析的图片
     if (!expandAll) {
+      // 展开所有
+      const newKeys = new Set(classInfo?.photos.map(photo => `${photo.photo_id}-explanation`))
+      setExpandedKeys(newKeys)
+
+      // 获取所有未加载解析的图片
       const photosWithoutExplanation = classInfo?.photos.filter(photo => !photo.explanation) || []
 
       // 并行获取所有未加载的解析
@@ -264,6 +269,9 @@ export default function ClassPage() {
       })
 
       await Promise.all(explanationPromises)
+    } else {
+      // 折叠所有
+      setExpandedKeys(new Set())
     }
   }
 
@@ -340,9 +348,12 @@ export default function ClassPage() {
               </div>
             )}
             <div className="p-2">
-              <Accordion>
+              <Accordion
+                selectedKeys={expandedKeys}
+                onSelectionChange={(keys) => setExpandedKeys(new Set(Array.from(keys).map(String)))}
+              >
                 <AccordionItem
-                  key="1"
+                  key={`${photo.photo_id}-explanation`}
                   aria-label="分析"
                   title="解析"
                   onPress={async () => {
@@ -365,7 +376,7 @@ export default function ClassPage() {
                     {photo.explanation ? (
                       <MarkdownRenderer content={photo.explanation} />
                     ) : (
-                      ''
+                      <div className="h-4" />
                     )}
                   </div>
                 </AccordionItem>
