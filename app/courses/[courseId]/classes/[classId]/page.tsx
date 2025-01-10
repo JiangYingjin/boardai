@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { Button, Accordion, AccordionItem, Spinner } from "@nextui-org/react"
-import { ChevronLeft, Plus, Settings } from "lucide-react"
+import { Button, Accordion, AccordionItem, Spinner, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from "@nextui-org/react"
+import { ChevronLeft, Plus, Settings, ChevronDownIcon, ChevronUpIcon } from "lucide-react"
 import { ArrowDownTrayIcon, ClipboardDocumentIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { isAuthenticated } from '@/lib/auth'
 import Markdown from 'react-markdown'
@@ -33,6 +33,10 @@ export default function ClassPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [selectedPhotoId, setSelectedPhotoId] = useState<number | null>(null)
+  const [expandAll, setExpandAll] = useState(false)
+
+  const { isOpen: isMenuOpen, onOpen: onMenuOpen, onClose: onMenuClose } = useDisclosure()
+  const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure()
 
   useEffect(() => {
     const courseId = params?.courseId
@@ -148,6 +152,103 @@ export default function ClassPage() {
     }
   }
 
+  const handleDeleteClass = async () => {
+    try {
+      const response = await fetch(`/api/courses/${params.courseId}/classes/${params.classId}`, {
+        method: 'DELETE',
+      })
+      if (!response.ok) {
+        throw new Error('删除失败')
+      }
+      router.push(`/courses/${params.courseId}`)
+    } catch (error) {
+      console.error('删除课堂失败:', error)
+    }
+  }
+
+  const retryFetchExplanation = async (photoId: number, maxRetries = 120): Promise<string | null> => {
+    let retryCount = 0;
+
+    // 先获取初始结果并立即返回给用户显示
+    const initialExplanation = await fetchExplanation(photoId)
+    if (initialExplanation) {
+      setClassInfo(prev => ({
+        ...prev!,
+        photos: prev!.photos.map(p =>
+          p.photo_id === photoId
+            ? { ...p, explanation: initialExplanation }
+            : p
+        )
+      }))
+    }
+
+    // 如果初始结果不完整，则在后台继续轮询
+    if (initialExplanation && initialExplanation.endsWith('...')) {
+      // 使用 Promise 来处理后台轮询
+      (async () => {
+        while (retryCount < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 1000))
+          const newExplanation = await fetchExplanation(photoId)
+
+          if (newExplanation && !newExplanation.endsWith('...')) {
+            // 获取到完整结果，更新显示并结束轮询
+            setClassInfo(prev => ({
+              ...prev!,
+              photos: prev!.photos.map(p =>
+                p.photo_id === photoId
+                  ? { ...p, explanation: newExplanation }
+                  : p
+              )
+            }))
+            break
+          }
+
+          // 如果新结果不同于当前显示的结果，则更新显示
+          if (newExplanation && newExplanation !== initialExplanation) {
+            setClassInfo(prev => ({
+              ...prev!,
+              photos: prev!.photos.map(p =>
+                p.photo_id === photoId
+                  ? { ...p, explanation: newExplanation }
+                  : p
+              )
+            }))
+          }
+
+          retryCount++
+        }
+      })()
+    }
+
+    return initialExplanation
+  }
+
+  const toggleAllExplanations = async () => {
+    setExpandAll(prev => !prev)
+
+    // 如果是展开操作，则获取所有未加载解析的图片
+    if (!expandAll) {
+      const photosWithoutExplanation = classInfo?.photos.filter(photo => !photo.explanation) || []
+
+      // 并行获取所有未加载的解析
+      const explanationPromises = photosWithoutExplanation.map(async (photo) => {
+        const explanation = await retryFetchExplanation(photo.photo_id)
+        if (explanation) {
+          setClassInfo(prev => ({
+            ...prev!,
+            photos: prev!.photos.map(p =>
+              p.photo_id === photo.photo_id
+                ? { ...p, explanation }
+                : p
+            )
+          }))
+        }
+      })
+
+      await Promise.all(explanationPromises)
+    }
+  }
+
   if (loading) return null
   if (error) return <div>错误: {error}</div>
   if (!classInfo) return <div>未找到课堂信息</div>
@@ -185,7 +286,14 @@ export default function ClassPage() {
           <Button
             variant="light"
             isIconOnly
-            onPress={() => router.push(`/manage?classId=${params.classId}`)}
+            onPress={toggleAllExplanations}
+          >
+            {expandAll ? <ChevronUpIcon size={24} /> : <ChevronDownIcon size={24} />}
+          </Button>
+          <Button
+            variant="light"
+            isIconOnly
+            onPress={onMenuOpen}
           >
             <Settings size={24} />
           </Button>
@@ -221,7 +329,7 @@ export default function ClassPage() {
                   title="解析"
                   onPress={async () => {
                     if (!photo.explanation) {
-                      const explanation = await fetchExplanation(photo.photo_id)
+                      const explanation = await retryFetchExplanation(photo.photo_id)
                       if (explanation) {
                         setClassInfo(prev => ({
                           ...prev!,
@@ -237,32 +345,9 @@ export default function ClassPage() {
                 >
                   <div className="text-sm">
                     {photo.explanation ? (
-                      <MarkdownRenderer
-                        content={photo.explanation}
-//                         content={`
-// # 工数
-                          
-// ## 变量代换法
-
-// 行内公式示例：$\\int f(x) \\, dx$，其中 $x = g(t)$
-
-// 块级公式：
-
-// $$
-// \\int f(x) \\, dx = \\int f(g(t)) \\cdot g^\\prime(t) \\, dt
-// $$
-
-// ### 推导过程
-
-// 1. 设 $F(x)$ 是 $f(x)$ 的原函数
-// 2. 则有：
-//    $$
-//    F'(x) = f(x)
-//    $$
-// `}
-                      />
+                      <MarkdownRenderer content={photo.explanation} />
                     ) : (
-                      '暂无分析'
+                      ''
                     )}
                   </div>
                 </AccordionItem>
@@ -271,6 +356,42 @@ export default function ClassPage() {
           </div>
         ))}
       </div>
+
+      <Modal isOpen={isMenuOpen} onClose={onMenuClose} size="sm">
+        <ModalContent>
+          <ModalHeader className="flex flex-col gap-1">课堂管理</ModalHeader>
+          <ModalBody>
+            <Button
+              color="danger"
+              variant="light"
+              onPress={() => {
+                onMenuClose()
+                onDeleteOpen()
+              }}
+              startContent={<TrashIcon className="h-5 w-5" />}
+            >
+              删除课堂
+            </Button>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+
+      <Modal isOpen={isDeleteOpen} onClose={onDeleteClose}>
+        <ModalContent>
+          <ModalHeader className="text-danger">删除课堂</ModalHeader>
+          <ModalBody>
+            <p>确定要删除该课堂吗？此操作无法撤销。</p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="light" onPress={onDeleteClose}>
+              取消
+            </Button>
+            <Button color="danger" onPress={handleDeleteClass}>
+              删除
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   )
 } 
