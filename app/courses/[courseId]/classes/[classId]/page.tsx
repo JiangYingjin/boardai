@@ -40,7 +40,6 @@ export default function ClassPage() {
   // 添加一个 ref 来追踪组件是否已卸载
   const isUnmounted = useRef(false)
 
-  // 在组件卸载时更新 ref
   useEffect(() => {
     return () => {
       isUnmounted.current = true
@@ -175,71 +174,50 @@ export default function ClassPage() {
     }
   }
 
-  const retryFetchExplanation = async (photoId: number, maxRetries = 120): Promise<string | null> => {
-    let retryCount = 0;
+  const retryFetchExplanation = async (photoId: number, maxRetries = 60): Promise<string | null> => {
+    let retryCount = 0
+    let unchangedCount = 0
+    let lastExplanation = null
 
-    // 先获取初始结果并立即返回给用户显示
-    const initialExplanation = await fetchExplanation(photoId)
-    if (initialExplanation) {
-      if (!isUnmounted.current) {
+    const pollInterval = setInterval(async () => {
+      if (retryCount >= maxRetries) {
+        clearInterval(pollInterval)
+        return
+      }
+
+      const newExplanation = await fetchExplanation(photoId)
+
+      // 检查结果是否与上次相同
+      if (newExplanation === lastExplanation) {
+        unchangedCount++
+        if (unchangedCount >= 10) {
+          clearInterval(pollInterval)
+          return
+        }
+      } else {
+        unchangedCount = 0
+      }
+
+      if (newExplanation) {
+        lastExplanation = newExplanation
         setClassInfo(prev => ({
           ...prev!,
           photos: prev!.photos.map(p =>
             p.photo_id === photoId
-              ? { ...p, explanation: initialExplanation }
+              ? { ...p, explanation: newExplanation }
               : p
           )
         }))
-      }
-    }
 
-    // 如果初始结果不完整，则在后台继续轮询
-    if (initialExplanation && initialExplanation.endsWith('...')) {
-      // 使用 Promise 来处理后台轮询
-      (async () => {
-        while (retryCount < maxRetries && !isUnmounted.current) {
-          await new Promise(resolve => setTimeout(resolve, 1000))
-          const newExplanation = await fetchExplanation(photoId)
-
-          if (isUnmounted.current) {
-            break
-          }
-
-          if (newExplanation && !newExplanation.endsWith('...')) {
-            // 获取到完整结果，更新显示并结束轮询
-            if (!isUnmounted.current) {
-              setClassInfo(prev => ({
-                ...prev!,
-                photos: prev!.photos.map(p =>
-                  p.photo_id === photoId
-                    ? { ...p, explanation: newExplanation }
-                    : p
-                )
-              }))
-            }
-            break
-          }
-
-          // 如果新结果不同于当前显示的结果，则更新显示
-          if (newExplanation && newExplanation !== initialExplanation) {
-            if (!isUnmounted.current) {
-              setClassInfo(prev => ({
-                ...prev!,
-                photos: prev!.photos.map(p =>
-                  p.photo_id === photoId
-                    ? { ...p, explanation: newExplanation }
-                    : p
-                )
-              }))
-            }
-          }
-
-          retryCount++
+        if (!newExplanation.endsWith('...')) {
+          clearInterval(pollInterval)
         }
-      })()
-    }
+      }
 
-    return initialExplanation
+      retryCount++
+    }, 1000)
+
+    return null
   }
 
   const toggleAllExplanations = async () => {
